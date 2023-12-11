@@ -1,0 +1,61 @@
+version: '3'
+services:
+
+  mariadb:
+    container_name: mariadbCompose
+    restart: always
+    build:
+      context: ./requirements/mariadb
+    image: mariadb:42-inception
+    networks:
+      - inception
+    volumes:
+      - /home/${SUDO_USER}/data/db:/var/lib/mysql
+    environment:
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+  
+  wordpress:
+    container_name: wordpressCompose
+    restart: always
+    build:
+      context: ./requirements/wordpress
+    image: wordpress:42-inception
+    networks:
+      - inception
+    volumes:
+      - /home/${SUDO_USER}/data/wordpress:/var/www/html
+    environment:
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+    depends_on:
+      - mariadb
+
+  nginx:
+    container_name: nginxCompose
+    restart: always
+    build:
+      context: ./requirements/nginx
+      args:
+        - CONTAINER_USER=${SUDO_USER}
+    image: nginx:42-inception
+    networks:
+      - inception
+    ports:
+      - 443:443
+    volumes:
+      - /home/${SUDO_USER}/data/wordpress:/var/www/html:ro
+    environment:
+      - CONTAINER_USER=${SUDO_USER}
+    depends_on:
+      - wordpress
+
+networks:
+  inception:
+    driver: bridge
+
+volumes:
+  wordpress:
+  db_data:
